@@ -18,7 +18,6 @@ def denoise_audio():
     # nperseg=1024 (fenêtre de ~23ms à 44.1kHz)
     f, t, Zxx = stft(noisy_signal, fs=fs, nperseg=1024)
     
-    # On récupère le module (amplitude) et la phase
     magnitude = np.abs(Zxx)
     phase = np.angle(Zxx)
 
@@ -26,15 +25,11 @@ def denoise_audio():
     # On suppose que les 10 premières fenêtres ne contiennent que du bruit
     noise_estimation = np.mean(magnitude[:, :10], axis=1, keepdims=True)
 
-    # --- 5. Soustraction Spectrale Optimisée ---
+    # 5. Soustraction Spectrale Optimisée
     alpha = 2.0  # Facteur d'over-subtraction (plus il est haut, plus on enlève de bruit)
     beta = 0.02  # Spectral floor (évite de mettre à zéro absolu)
 
-    # Application de la formule : Result = Magnitude - alpha * Noise
     magnitude_denoised = magnitude - alpha * noise_estimation
-    
-    # Au lieu de np.maximum(..., 0), on applique le spectral floor
-    # Si la valeur est trop basse, on garde une fraction du bruit d'origine (beta)
     magnitude_denoised = np.where(magnitude_denoised > beta * noise_estimation, 
                                   magnitude_denoised, 
                                   beta * noise_estimation)
@@ -49,7 +44,7 @@ def denoise_audio():
     denoised_signal = np.clip(denoised_signal, -32768, 32767).astype(np.int16)
     wavfile.write(output_path, fs, denoised_signal)
     
-    # 8. Visualisation (Sauvegarde en PNG si la fenêtre ne s'ouvre pas)
+    # 8. Visualisation 
     plt.figure(figsize=(12, 6))
     plt.subplot(2, 1, 1)
     plt.pcolormesh(t, f, 20 * np.log10(magnitude + 1e-10), shading='gouraud')
